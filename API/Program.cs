@@ -19,7 +19,7 @@ namespace API
              // CreateHostBuilder(args).Build().Run();
             var host = CreateHostBuilder(args).Build();
 
-            using(var scope = host.Services.CreateScope()) 
+            using(var scope = host.Services.CreateScope())  // every time we run our app is gonna check if we got a DB if not one is gonna be created based on our migrations
             {
                 var services = scope.ServiceProvider;
                 try

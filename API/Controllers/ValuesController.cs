@@ -14,7 +14,8 @@ namespace DatingApp.API.Controllers
     public class ValuesController : ControllerBase
     {
         private readonly DataContext _context;
-        public ValuesController(DataContext context) //conseguimos acceso al contexto en nuestro controlador
+        //We create a constructor so we can access the context
+        public ValuesController(DataContext context) 
         {
             _context = context;
         }

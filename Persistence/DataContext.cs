@@ -1,9 +1,10 @@
 ﻿using Domain;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Persistence
 {
-    public class DataContext : DbContext  //We need to add this as a service to inject it in various parts of our application, in order to query this entities in our database
+    public class DataContext : IdentityDbContext<AppUser> //We need to add this as a service to inject it in various parts of our application, in order to query this entities in our database
     {
         public DataContext(DbContextOptions options) : base (options)
         {
@@ -15,6 +16,8 @@ namespace Persistence
 
         protected override void OnModelCreating (ModelBuilder builder)
         {
+            base.OnModelCreating(builder); //on creating the migration to give a AppUser a PK, otherwise error
+
             builder.Entity<Value>()
                 .HasData(
                     new Value {id = 1, Name = "Value 101"},

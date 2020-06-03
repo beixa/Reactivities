@@ -2,6 +2,7 @@ using System.Text;
 using API.Middleware;
 using Application.Activities;
 using Application.Interfaces;
+using AutoMapper;
 using Domain;
 using FluentValidation.AspNetCore;
 using Infrastructure.Security;
@@ -35,6 +36,7 @@ namespace API
         {
             services.AddDbContext<DataContext>( opt =>
             {
+                opt.UseLazyLoadingProxies();
                 opt.UseSqlite(Configuration.GetConnectionString("DefaultConnection"));
             });
 
@@ -45,6 +47,8 @@ namespace API
             });
 
             services.AddMediatR(typeof(List.Handler).Assembly);
+
+            services.AddAutoMapper(typeof(List.Handler));
 
             services.AddControllers( opt =>
             {
@@ -60,6 +64,16 @@ namespace API
             identityBuilder.AddEntityFrameworkStores<DataContext>();
             identityBuilder.AddSignInManager<SignInManager<AppUser>>(); // gives the ability to manage our users
 
+            services.AddAuthorization( opt =>
+            {
+                opt.AddPolicy("IsActivityHost", policy =>
+                {
+                     policy.Requirements.Add(new IsHostRequirement());  
+                });
+            });
+            services.AddTransient<IAuthorizationHandler, IsHostRequirementHandler>();
+            //AddTransient -> it's only available for the life time of the operation not the request
+            
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["TokenKey"]));
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(opt =>

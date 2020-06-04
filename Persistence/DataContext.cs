@@ -14,6 +14,7 @@ namespace Persistence
         public DbSet<Value> Values { get; set; } // a property with the table Name
         public DbSet<Activity> Activities { get; set; }
         public DbSet<UserActivity> UserActivities { get; set; }
+        public DbSet<Photo> Photos { get; set; }
 
         protected override void OnModelCreating (ModelBuilder builder)
         {

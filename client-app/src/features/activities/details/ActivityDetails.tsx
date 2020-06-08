@@ -5,8 +5,8 @@ import { RouteComponentProps } from "react-router-dom";
 import { LoadingComponent } from "../../../app/layout/LoadingComponent";
 import ActivityDetailHeader from "./ActivityDetailHeader";
 import ActivityDetailedInfo from "./ActivityDetailedInfo";
-import { ActivityDetailedChat } from "./ActivityDetailedChat";
-import  ActivityDetailedSidebar  from "./ActivityDetailedSidebar";
+import ActivityDetailedChat from "./ActivityDetailedChat";
+import ActivityDetailedSidebar from "./ActivityDetailedSidebar";
 import { RootStoreContext } from "../../../app/stores/rootStore";
 
 interface DetailParams {
@@ -14,7 +14,7 @@ interface DetailParams {
 }
 
 const ActivityDetails: React.FC<RouteComponentProps<DetailParams>> = ({
-  match
+  match,
 }) => {
   const rootStore = useContext(RootStoreContext);
   const { activity, loadActivity, loadingInitial } = rootStore.activityStore;

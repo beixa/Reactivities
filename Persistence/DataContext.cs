@@ -6,10 +6,7 @@ namespace Persistence
 {
     public class DataContext : IdentityDbContext<AppUser> //We need to add this as a service to inject it in various parts of our application, in order to query this entities in our database
     {
-        public DataContext(DbContextOptions options) : base (options)
-        {
-            
-        }
+        public DataContext(DbContextOptions options) : base (options){} // with the constructor we make sure we are resolving the options configured in the dependency injection container (addDbContext()) and passing them to de base
 
         public DbSet<Value> Values { get; set; } // a property with the table Name
         public DbSet<Activity> Activities { get; set; }

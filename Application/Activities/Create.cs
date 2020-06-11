@@ -74,7 +74,7 @@ namespace Application.Activities
 
                 _context.UserActivities.Add(attende);  
 
-                var success = await _context.SaveChangesAsync() > 0;
+                var success = await _context.SaveChangesAsync() > 0; //savechanges is the method that persists the data to the database
 
                 if (success) return Unit.Value;
 

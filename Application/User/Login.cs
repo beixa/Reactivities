@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -8,7 +9,6 @@ using Domain;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Persistence;
 
 namespace Application.User
 {
@@ -52,11 +52,16 @@ namespace Application.User
 
                 if (result.Succeeded)
                 {
-                    // TODO: Generate token
+                    user.RefreshToken = _jwtGenerator.GenerateRefreshToken();
+                    user.RefreshTokenExpiry = DateTime.Now.AddDays(30);
+
+                    await _userManager.UpdateAsync(user);
+
                     return new User
                     {
                         DisplayName = user.DisplayName,
                         Token = _jwtGenerator.CreateToken(user),
+                        RefreshToken = user.RefreshToken,
                         Username = user.UserName,
                         Image = user.Photos.FirstOrDefault(x => x.IsMain)?.Url
                     };

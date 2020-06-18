@@ -51,11 +51,14 @@ namespace Application.User
                         DisplayName = userInfo.FirstName,
                         Id = userInfo.Id,
                         Email = userInfo.Email,
-                        UserName = "fb_" + userInfo.Id
+                        UserName = "fb_" + userInfo.Id,
+                        RefreshToken = _jwtGenerator.GenerateRefreshToken(),
+                        RefreshTokenExpiry = DateTime.Now.AddDays(30)
                     };
 
                     var photo = new Photo
                     {
+                        Id = Guid.NewGuid().ToString(),
                         Url = userInfo.Picture.Data.Url,
                         IsMain = true
                     };
@@ -71,6 +74,7 @@ namespace Application.User
                 {
                     DisplayName = user.DisplayName,
                     Token = _jwtGenerator.CreateToken(user),
+                    RefreshToken = user.RefreshToken,
                     Username = user.UserName,
                     Image = user.Photos.FirstOrDefault(x => x.IsMain)?.Url
                 };

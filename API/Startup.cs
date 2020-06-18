@@ -115,7 +115,7 @@ namespace API
                         ValidateAudience =  false,
                         ValidateIssuer = false,
                         ValidateLifetime = true,
-                        ClockSkew = TimeSpan.Zero
+                        ClockSkew = TimeSpan.Zero //so the token gets inmediatly rejected by the API
                     };
                     opt.Events = new JwtBearerEvents
                     {

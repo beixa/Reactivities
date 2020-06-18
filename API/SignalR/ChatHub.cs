@@ -3,10 +3,12 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Application.Comments;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace API.SignalR
 {
+    [Authorize]
     public class ChatHub : Hub
     {
         private readonly IMediator _mediator;
@@ -26,30 +28,30 @@ namespace API.SignalR
 
             await Clients.All.SendAsync("ReceiveComment", comment);
             
-            //await Clients.Group(command.ActivityId.ToString()).SendAsync("ReceiveComment", comment);
+            await Clients.Group(command.ActivityId.ToString()).SendAsync("ReceiveComment", comment);
         }
 
-        // private string GetUsername()
-        // {
-        //     return Context.User?.Claims?.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
-        // }
+        private string GetUsername()
+        {
+            return Context.User?.Claims?.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
+        }
 
-        // public async Task AddToGroup(string groupName)
-        // {
-        //     await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+        public async Task AddToGroup(string groupName)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
             
-        //     var username = GetUsername();
+            var username = GetUsername();
 
-        //     await Clients.Group(groupName).SendAsync("Send",$"{username} has joined the group");
-        // }
+            await Clients.Group(groupName).SendAsync("Send",$"{username} has joined the group");
+        }
 
-        // public async Task RemoveFromGroup(string groupName)
-        // {
-        //     await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
+        public async Task RemoveFromGroup(string groupName)
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
             
-        //     var username = GetUsername();
+            var username = GetUsername();
 
-        //     await Clients.Group(groupName).SendAsync("Send",$"{username} has left the group");
-        // }
+            await Clients.Group(groupName).SendAsync("Send",$"{username} has left the group");
+        }
     }
 }

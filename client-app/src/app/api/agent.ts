@@ -1,45 +1,60 @@
-import axios, { AxiosResponse } from "axios";
-import { IActivity, IActivitiesEnvelope } from "../models/activity";
-import { history } from "../..";
-import { toast } from "react-toastify";
-import { IUser, IUserFormValues } from "../models/user";
-import { IProfile, IPhoto } from "../models/profile";
+import axios, { AxiosResponse } from 'axios';
+import { IActivity, IActivitiesEnvelope } from '../models/activity';
+import { history } from '../..';
+import { toast } from 'react-toastify';
+import { IUser, IUserFormValues } from '../models/user';
+import { IProfile, IPhoto } from '../models/profile';
 
 axios.defaults.baseURL = process.env.REACT_APP_API_URL;
 
 axios.interceptors.request.use(
-  (config) => {
-    const token = window.localStorage.getItem("jwt");
+  config => {
+    const token = window.localStorage.getItem('jwt');
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
-  (error) => {
+  error => {
     return Promise.reject(error);
   }
 );
 
-axios.interceptors.response.use(undefined, (error) => {
-  if (error.message === "Network Error" && !error.response) {
-    toast.error("Network error - make sure API is running!");
+axios.interceptors.response.use(undefined, error => {
+  const originalRequest = error.config;
+  if (error.message === 'Network Error' && !error.response) {
+    toast.error('Network error - make sure API is running!');
   }
-  const { status, data, config, headers } = error.response;
+  const { status, data, config } = error.response;
   if (status === 404) {
-    history.push("/notfound");
+    history.push('/notfound');
   }
-  if(status === 401 && headers["www-authenticate"] === 'Bearer error="invalid_token", error_description="The token is expired"' ){
+  if (status === 401 && originalRequest.url.endsWith('refresh')) {
     window.localStorage.removeItem('jwt');
-    history.push('/');
+    window.localStorage.removeItem('refreshToken');
+    history.push('/')
     toast.info('Your session has expired, please login again');
+    return Promise.reject(error);
+  }
+  if (status === 401 && !originalRequest._retry) {
+    originalRequest._retry = true;
+    return axios.post('user/refresh', {
+      'token': window.localStorage.getItem('jwt'),
+      'refreshToken': window.localStorage.getItem('refreshToken')
+    }).then(res => {
+        window.localStorage.setItem('jwt', res.data.token);
+        window.localStorage.setItem('refreshToken', res.data.refreshToken);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
+        return axios(originalRequest);
+    })
   }
   if (
     status === 400 &&
-    config.method === "get" &&
-    data.errors.hasOwnProperty("id")
+    config.method === 'get' &&
+    data.errors.hasOwnProperty('id')
   ) {
-    history.push("/notfound");
+    history.push('/notfound');
   }
   if (status === 500) {
-    toast.error("Server error - check the terminal for more info! ");
+    toast.error('Server error - check the terminal for more info!');
   }
   throw error.response;
 });
@@ -47,43 +62,62 @@ axios.interceptors.response.use(undefined, (error) => {
 const responseBody = (response: AxiosResponse) => response.data;
 
 const requests = {
-  get: (url: string) => axios.get(url).then(responseBody), // we sleep before passing the responseBody
+  get: (url: string) =>
+    axios
+      .get(url)
+      .then(responseBody),
   post: (url: string, body: {}) =>
-    axios.post(url, body).then(responseBody),
+    axios
+      .post(url, body)
+      .then(responseBody),
   put: (url: string, body: {}) =>
-    axios.put(url, body).then(responseBody),
-  del: (url: string) => axios.delete(url).then(responseBody),
+    axios
+      .put(url, body)
+      .then(responseBody),
+  del: (url: string) =>
+    axios
+      .delete(url)
+      .then(responseBody),
   postForm: (url: string, file: Blob) => {
     let formData = new FormData();
-    formData.append("File", file);
+    formData.append('File', file);
     return axios
       .post(url, formData, {
-        headers: { "Content-type": "multipart/form-data" },
+        headers: { 'Content-type': 'multipart/form-data' }
       })
       .then(responseBody);
-  },
+  }
 };
 
 const Activities = {
   list: (params: URLSearchParams): Promise<IActivitiesEnvelope> =>
-    axios.get('/activities',{params: params}).then(responseBody),
+    axios.get('/activities', {params: params}).then(responseBody),
   details: (id: string) => requests.get(`/activities/${id}`),
-  create: (activity: IActivity) => requests.post("/activities", activity),
+  create: (activity: IActivity) => requests.post('/activities', activity),
   update: (activity: IActivity) =>
     requests.put(`/activities/${activity.id}`, activity),
   delete: (id: string) => requests.del(`/activities/${id}`),
   attend: (id: string) => requests.post(`/activities/${id}/attend`, {}),
-  unattend: (id: string) => requests.del(`/activities/${id}/attend`),
+  unattend: (id: string) => requests.del(`/activities/${id}/attend`)
 };
 
 const User = {
-  current: (): Promise<IUser> => requests.get("/user"),
+  current: (): Promise<IUser> => requests.get('/user'),
   login: (user: IUserFormValues): Promise<IUser> =>
     requests.post(`/user/login`, user),
   register: (user: IUserFormValues): Promise<IUser> =>
     requests.post(`/user/register`, user),
   fbLogin: (accessToken: string) =>
-    requests.post(`/user/facebook`,{accessToken})
+    requests.post(`/user/facebook`, {accessToken}),
+  refreshToken: (token: string, refreshToken: string) => {
+    return axios.post(`/user/refresh`, {token, refreshToken})
+      .then(res => {
+        window.localStorage.setItem('jwt', res.data.token);
+        window.localStorage.setItem('refreshToken', res.data.refreshToken);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
+        return res.data.token;
+      })
+  }
 };
 
 const Profiles = {
@@ -107,5 +141,5 @@ const Profiles = {
 export default {
   Activities,
   User,
-  Profiles,
+  Profiles
 };

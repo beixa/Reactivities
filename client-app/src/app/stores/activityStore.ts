@@ -1,4 +1,11 @@
-import { observable, action, computed, runInAction, reaction } from "mobx";
+import {
+  observable,
+  action,
+  computed,
+  runInAction,
+  reaction,
+  toJS,
+} from "mobx";
 import { SyntheticEvent } from "react";
 import { IActivity } from "../models/activity";
 import agent from "../api/agent";
@@ -26,7 +33,7 @@ export default class ActivityStore {
         this.activityRegistry.clear();
         this.loadActivities();
       }
-    )
+    );
   }
 
   @observable activityRegistry = new Map(); // more than just an array to control our activities
@@ -42,37 +49,37 @@ export default class ActivityStore {
 
   @action setPredicate = (predicate: string, value: string | Date) => {
     this.predicate.clear();
-    if (predicate !== 'all') {
+    if (predicate !== "all") {
       this.predicate.set(predicate, value);
     }
-  }
+  };
 
   @computed get axiosParams() {
     const params = new URLSearchParams();
-    params.append('limit', String(LIMIT));
-    params.append('offset', `${this.page ? this.page * LIMIT : 0}`);
+    params.append("limit", String(LIMIT));
+    params.append("offset", `${this.page ? this.page * LIMIT : 0}`);
     this.predicate.forEach((value, key) => {
-      if (key=== 'startDate'){
-        params.append(key, value.toISOString())
+      if (key === "startDate") {
+        params.append(key, value.toISOString());
       } else {
-        params.append(key, value)
+        params.append(key, value);
       }
-    })
+    });
     return params;
   }
 
-  @computed get totalPages(){
+  @computed get totalPages() {
     return Math.ceil(this.activityCount / LIMIT);
   }
 
   @action setPage = (page: number) => {
-    this.page = page
-  }
+    this.page = page;
+  };
 
-  @action createHubConnection = (activityId: string) => {
+  @action createHubConnection = () => {
     this.hubConnection = new HubConnectionBuilder()
-      .withUrl("http://localhost:5000/chat", {
-        accessTokenFactory: () => this.rootStore.commonStore.token!, //send the token as a query string
+      .withUrl(process.env.REACT_APP_API_CHAT_URL!, {
+        accessTokenFactory: () => this.rootStore.commonStore.token!
       })
       .configureLogging(LogLevel.Information)
       .build();
@@ -80,38 +87,27 @@ export default class ActivityStore {
     this.hubConnection
       .start()
       .then(() => console.log(this.hubConnection!.state))
-      .then(() => {
-        this.hubConnection!.invoke("AddToGroup", activityId);
-      })
-      .catch((error) => console.log("Error establishing connection: ", error));
+      .catch(error => console.log('Error establishing connection: ', error));
 
-    this.hubConnection.on("ReceiveComment", (comment) => {
+    this.hubConnection.on('ReceiveComment', comment => {
       runInAction(() => {
-        this.activity!.comments.push(comment);
-      });
-    });
-
-    this.hubConnection.on("Send", (message) => {
-      toast.info(message);
-    });
+        this.activity!.comments.push(comment)
+      })
+    })
   };
 
   @action stopHubConnection = () => {
-    this.hubConnection!.invoke("RemoveFromGroup", this.activity!.id)
-      .then(() => {
-        this.hubConnection!.stop();
-      })
-      .catch((err) => console.log(err));
-  };
+    this.hubConnection!.stop()
+  }
 
   @action addComment = async (values: any) => {
     values.activityId = this.activity!.id;
     try {
-      await this.hubConnection!.invoke("SendComment", values); //name needs to match with SendComment from ChatHub
+      await this.hubConnection!.invoke('SendComment', values) //name needs to match with SendComment from ChatHub
     } catch (error) {
       console.log(error);
     }
-  };
+  }
 
   @computed get activitiesByDate() {
     return this.groupActivitiesByDate(
@@ -139,7 +135,7 @@ export default class ActivityStore {
     this.loadingInitial = true; //we are mutating our state
     try {
       const activitiesEnvelope = await agent.Activities.list(this.axiosParams);
-      const {activities, activityCount} = activitiesEnvelope;
+      const { activities, activityCount } = activitiesEnvelope;
       runInAction("loading activities", () => {
         activities.forEach((activity) => {
           setActivityProps(activity, this.rootStore.userStore.user!);
@@ -160,7 +156,7 @@ export default class ActivityStore {
     let activity = this.getActivity(id);
     if (activity) {
       this.activity = activity;
-      return activity;
+      return toJS(activity); //instead of returning an observable to return a JS object
     } else {
       this.loadingInitial = true;
       try {

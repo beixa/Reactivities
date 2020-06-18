@@ -22,7 +22,8 @@ namespace Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .HasMaxLength(256);
 
                     b.Property<string>("Category")
                         .HasColumnType("TEXT");

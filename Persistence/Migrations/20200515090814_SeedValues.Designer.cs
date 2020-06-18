@@ -2,8 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Persistence;
 
 namespace Persistence.Migrations
 {
@@ -14,8 +12,8 @@ namespace Persistence.Migrations
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder
-                .HasAnnotation("ProductVersion", "3.1.2");
+             modelBuilder
+             .HasAnnotation("ProductVersion", "3.1.2");
 
             modelBuilder.Entity("Domain.Value", b =>
                 {

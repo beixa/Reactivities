@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 using System.Threading.Tasks;
 using API.Middleware;
@@ -35,8 +36,7 @@ namespace API
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services) //it's a dependency injection container
+        public void ConfigureDevelopmentServices (IServiceCollection services)
         {
             services.AddDbContext<DataContext>( opt =>
             {
@@ -44,12 +44,33 @@ namespace API
                 opt.UseSqlite(Configuration.GetConnectionString("DefaultConnection"));
             });
 
+            ConfigureServices(services);
+        }
+
+        public void ConfigureProductionServices (IServiceCollection services)
+        {
+            services.AddDbContext<DataContext>( opt =>
+            {
+                opt.UseLazyLoadingProxies();
+                opt.UseMySql(Configuration.GetConnectionString("DefaultConnection"));
+            });
+
+            ConfigureServices(services);
+
+        }
+
+        // This method gets called by the runtime. Use this method to add services to the container.
+        public void ConfigureServices(IServiceCollection services) //it's a dependency injection container
+        {
             services.AddCors(opt => {
-                opt.AddPolicy("CorsPolicy", policy => {
-                    policy.AllowAnyHeader()
-                    .AllowAnyMethod()
-                    .WithOrigins("http://localhost:3000")
-                    .AllowCredentials();
+                opt.AddPolicy("CorsPolicy", policy => 
+                {
+                    policy
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .WithExposedHeaders("WWW-Authenticate") //to see invalid_token error on the 401 headers
+                        .WithOrigins("http://localhost:3000")
+                        .AllowCredentials();
                 });
             });
 
@@ -93,6 +114,8 @@ namespace API
                         IssuerSigningKey =  key,
                         ValidateAudience =  false,
                         ValidateIssuer = false,
+                        ValidateLifetime = true,
+                        ClockSkew = TimeSpan.Zero
                     };
                     opt.Events = new JwtBearerEvents
                     {
@@ -128,6 +151,10 @@ namespace API
 
             //app.UseHttpsRedirection();
 
+            app.UseDefaultFiles();//this is gonna take a look at wwwroot for any files like index, root, etc.. default types
+            
+            app.UseStaticFiles();
+
             app.UseRouting(); //it's gonna route it to the right controller
 
             app.UseCors("CorsPolicy");
@@ -140,6 +167,7 @@ namespace API
             {
                 endpoints.MapControllers(); // to know how to route it properly
                 endpoints.MapHub<ChatHub>("/chat"); // for SignalR
+                endpoints.MapFallbackToController("Index", "Fallback"); //for React routing
             });
         }
     }
